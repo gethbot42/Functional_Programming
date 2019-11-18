@@ -1,0 +1,327 @@
+﻿CS-498/598: Functional Programming - Week 2
+
+
+
+
+CS-498/598: Functional Programming - Week 2
+More on Haskell Functions
+Function Pattern Matches
+Function Guards
+Function Local Definitions
+Haskell if/then/else
+Basic I/O, Compiling and Running Haskell Programs
+
+
+More on Haskell Functions
+* Also see -- FUNCTIONS -- section of haskell tutorial.
+
+* Precedence in function usage
+   * To combine functions, i.e., use function calls as expressions, you need to know their precedence.
+   * In Haskell this is simple: Function application binds tighter than anything else.
+   * Try sqrt 9 + 7.
+   * Combining two functions
+   * Try to apply 'min' to 'max 3 4' and '5'. That is, find the minimum of 'max 3 4' and '5'.
+   * If an argument to a function is an expression, you need to put it in parentheses.
+   * sqrt (9 + 7)
+   * min (max 3 4) 5
+   * In lab1.hs:
+
+-- secondLastElem :: [a] -> a
+secondLastElem a = last (init a)
+
+
+Function Pattern Matches
+
+      * Specify patterns to which some data should conform.
+      * Check to see if incoming data (function arguments) conform to patterns.
+      * Deconstruct the data according to those patterns.
+      * Very similar to switch or case statements in other languages.
+      * When defining functions, you can define separate function bodies for different patterns.
+      * A pattern match can be on any data type -- numbers, characters, lists, tuples, etc.
+      * Example: whatAge function
+
+        -- whatAge :: Int -> String
+        whatAge 16 = "You can drive."
+whatAge 18 = "You can vote."
+whatAge 21 = "You can drink."
+-- default
+whatAge x = "What's your age?"
+
+
+         * Patterns are checked from top to bottom, and when a function argument conforms to a pattern, the corresponding function body will be used.
+         * The only way a number can conform to the first pattern here is if it is 16. If it's not, it falls through to the second pattern, and so on, until we reach the default function body.
+         * When doing function pattern matching, you must provide a default function body, and it should come after the pattern matches.
+         * Failure to do this will result in a "Non-exhaustive patterns in function..." exception.
+         * In general, it's best to specify the most specific patterns first and then the more general ones later.
+
+            * Example: recursive factorial function
+
+        -- factorial :: Int -> Int
+Base case (using pattern match)
+factorial 0 = 1
+-- Recursive call (default)
+factorial n = n * factorial (n - 1)
+
+
+               * Lists used in pattern matching
+               * Can match an empty list with [] or any pattern that involves : and the empty list. 
+               * A pattern like x:xs will bind the head of the list to x and the rest of the list (tail) to xs.
+               * If you want to bind, say, the first three elements to variables and the rest of the list to another variable, you can use something like x:y:z:zs; this pattern only matches lists that have three elements or more.
+               * Example:
+
+
+        -- listInfo :: (Show a) => [a] -> String
+listInfo [] = "The list is empty"  
+listInfo (x:[]) = "The list has one element: " ++ show x
+listInfo (x:y:[]) = "The list has two elements: " ++ show x ++ ", " ++ show y
+listInfo (x:y:_) = "This list is long. The first two elements are: " ++ show x ++ ", " ++ show y
+
+
+               * The listInfo function can take an empty list, a singleton list, a list with two elements and a list with more than two elements (default).
+               * The _ means that we don't care what that part is, so we just write a _.
+               * If you want to bind to several variables (even if one of them is just _ and doesn't actually bind at all), we have to surround them in parentheses.
+
+
+               * Example: Implement our own length' function using pattern matching and recursion
+
+
+-- length' :: (Num b) => [a] -> b
+-- base case (empty list, using pattern match)
+length' [] = 0
+-- recursively call length' for non-empty list
+length' (_:xs) = 1 + length' xs
+
+
+Function Guards
+               * Whereas patterns are a way of making sure a value conforms to some form and deconstructing it, guards are a way of testing whether some property of a value (or several of them) are true or false.
+               * Very similar to if/then/else, with the benefit of being more readable when you have several conditions.
+
+                  * Example: (whatAge again)        
+
+-- whatAge' :: Int -> String
+whatAge' age
+    | age == 16 = "You can drive."
+    | age == 18 = "You can vote."
+    | age == 21 = "You can drink."
+    | age == 50 = "You can join the AARP."
+    | age > 50  = "Congratulations, you're old!"
+    | otherwise = "You are of an undetermined age."  
+
+
+                     * Guards are indicated by pipes (|) that follow a function's name and its parameters. 
+                     * A guard is a boolean expression. 
+                     * If it evaluates to True, then the corresponding function body is used.
+                     * If it evaluates to False, checking drops through to the next guard and so on.
+                     * Reminiscent of a big if/then/else tree in imperative languages.
+                     * The last guard is an optional otherwise. 
+                     * otherwise catches everything that falls through the other guards.
+
+                        * Guards are similar to patterns, where patterns check if an input satisfies a pattern but guards check for boolean conditions. 
+                        * If all the guards of a function evaluate to False (and we haven't provided an otherwise catch-all guard), evaluation falls through to the next pattern.
+                        * So patterns and guards can be used together.
+                        * If no suitable guards or patterns are found, an error is thrown.
+                        * Using patterns and guards together:
+
+whatAge 16 = "You can drive."
+whatAge 18 = "You can vote."
+whatAge 21 = "You can drink."
+whatAge age
+    | age == 17 = "You can drive a little better."
+    | age == 19 = "You are a slightly more informed voter."
+    | age == 20 = "Put that drink down."
+    | age == 50 = "You can join the AARP."
+    | age > 50  = "Congratulations, you're old!"
+-- default
+whatAge x = "What's your age?"
+
+
+                           * Guards can deal with multiple function input arguments
+                           * Example: implement our own max function
+
+-- max' :: (Ord a) => a -> a -> a  
+max' a b
+    | a > b     = a 
+    | otherwise = b
+
+
+                              * The function bodies of pattern matches and guards must all return the same type.
+                              * The following would not be a valid function definition because the type of the function is ambiguous:
+
+-- whatAge :: Int -> String
+whatAge 16 = "You can drive."
+whatAge 18 = "You can vote."
+whatAge 21 = "You can drink."
+-- default
+whatAge x = x
+Function Local Definitions
+                                 * Complex functions could become very difficult to define if we're not allowed to define intermediate results that are local to the function.
+
+                                 * Using 'where'
+                                    * One way that Haskell allows local definitions is by using keyword where.
+                                    * Consider Heron's formula for computing the area of a triangle using only the length of the 3 sides.
+                                    * We can define a function called 'heronTriArea' as follows:
+
+        heronTriArea a b c = sqrt (s * (s - a) * (s - b) * (s - c))
+
+                                    * ...which leaves us the problem of how to define s (semiperimeter) in this function.
+                                       * We can solve this problem using where.
+
+heronTriArea a b c = sqrt (s * (s - a) * (s - b) * (s - c))
+        where
+s = (a + b + c) / 2  -- s is local to the function
+
+(can also be written...)
+
+                heronTriArea a b c = sqrt (s * (s - a) * (s - b) * (s - c)) where s = (a + b + c) / 2
+
+                (can also be written...)
+
+                heronTriArea a b c = result        -- use Heron's formula
+                            where
+                            result = sqrt (s * (s - a) * (s - b) * (s - c))
+                    s      = (a + b + c) / 2
+
+
+                                          * Haskell's where syntax allows you define local variables at the end of a function.
+                                          * These local variables are visible to the whole function, including all the guards (but not pattern matched function bodies).
+
+-- This works.
+whatAge age
+   | age == 16 = "You can drive, " ++ name ++ "."
+   | age == 18 = "You can vote, " ++ name ++ "."
+   | age == 21 = "You can drink, " ++ name ++ "."
+   | otherwise = "How old are you, " ++ name ++ "?"
+   where
+   name = "Fred"
+
+
+-- This does not work.
+whatAge 16 = "You can drive, " ++ name ++ "."
+whatAge 18 = "You can vote., " ++ name ++ "."
+whatAge 21 = "You can drink, " ++ name ++ "."
+whatAge x = "How old are you, " ++ name ++ "?"
+   where
+   name = "Fred"
+
+
+                                             * Using let..in..
+                                             * Another way that Haskell allows local definitions is by using the expression let..in..
+                                             * Define heronTriArea' using let..in..
+
+heronTriArea' a b c = 
+         let s = (a + b + c) / 2
+         in  sqrt (s * (s - a) * (s - b) * (s - c))
+
+
+                                                * The generic syntax is let <variable bindings> in <expression>.
+                                                * The names defined in the let part are accessible to the expression defined in the in part.
+
+                                                   * Unlike where local variables, let local variables are very local, so they don't span across guards.
+
+                                                   * Being a true Haskell expression let..in.. can also be used in different ways.
+
+4 * (let a = 9 in a + 1) + 2
+
+-- Introduce functions in a local scope
+[let square x = x * x in (square 5, square 3, square 2)]
+
+-- Bind to several variables inline by separating with ;
+let a = 100; b = 200; c = 300 in a * b * c
+
+                                                   * let can also be used in list comprehensions and do blocks.
+                                                      * When used in those contexts, the in.. part is omitted. 
+Haskell if/then/else
+
+
+                                                      * "It might be best not to think of if-then-else as flow control, as in most imperative languages, but think of it as construction of a value using a well formed expression." (link)
+                                                      * Or just think of if/then/else as an expression, not a control structure.
+                                                      * Note: A lot of the need for if/then/else is obviated by function guards.
+                                                      * An else is required if using if/then/else.
+                                                      * Example:
+
+doubleSmallNumber x = if x > 100 then
+                         x  
+                              else
+                                 x * 2
+
+        (can also be written)
+
+
+doubleSmallNumber x = if x > 100 then x else x*2
+
+        (Add one to every number that's returned by the if/then/else expression.)
+
+
+doubleSmallNumber' x = (if x > 100 then x else x * 2) + 1
+
+
+                                                         * An if/then/else expression must result in a value of one type, i.e., the then and else values cannot be of different types:
+
+        -- This is not valid:
+        if False then 42 else "foo"
+Basic I/O, Compiling and Running Haskell Programs
+
+
+
+-- basicIO.hs
+
+
+-- Optional for this program:
+        module Main where
+
+
+main = do
+          -- Make sure indentation under do is consistent.
+          putStrLn "Enter your num:"
+          x <- getLine
+          -- x is a string, so apply read to make xx an Integer
+          let xx = read x :: Integer
+          let y = doubleSmallNumber xx
+          putStr "Your num is "
+          -- Can't print number y with putStr, so use print
+          print y
+          -- Or use the show function which converts to string
+          -- putStrLn (show y)
+
+
+
+
+-- The order in which the functions are defined does not matter.
+doubleSmallNumber x = if x > 100 then 
+ x
+                      else
+ x*2
+        
+
+
+-- Alternative function using guards
+doubleSmallNumber' x
+                          | x > 100   = x
+                          | otherwise = x * 2
+
+
+
+
+                                                            * How to compile and/or run the above program (basicIO.hs)
+                                                            * The program has a main method.
+                                                            * It can be loaded into ghci, and main can be called manually.
+                                                            * To run the program in a more conventional manner (like a C++ program), we can compile it first using ghc.
+
+        ghc basicIO.hs
+
+                                                               * A successful compile will generate 3 additional files:
+                                                               * basicIO.o, basicIO.hi and basicIO
+                                                               * On Windows, basicIO will be basicIO.exe.
+                                                               * The runnable executable is basicIO (or basicIO.exe).
+                                                               * On UNIX, run basicIO with the command
+
+./basicIO
+
+                                                               * On Windows, run basicIO with the command
+
+basicIO (or basicIO.exe)
+
+                                                                  * The program can also be run without compiling it, like popular interpreted scripting languages like Python and Ruby.
+                                                                  * Use the runghc command:
+
+        runghc basicIO.hs

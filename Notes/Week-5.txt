@@ -1,0 +1,587 @@
+﻿CS-498/598: Functional Programming - Week 5
+CS-498/598: Functional Programming - Week 5
+Higher-Order Functions
+Higher-Order Functions and Types
+Exercise - descending order function
+Function manipulation
+Flipping arguments
+Function Composition
+Function application with $
+First-Class Functions
+Java Functional Programming
+Storing a Java function in an Object
+Java Lambdas
+Java Functional Interfaces
+
+
+Higher-Order Functions
+
+
+At the heart of functional programming is the idea that functions are just like any other value. 
+
+
+Functional style practioners handle functions as regular values, i.e. by passing functions to other functions and returning them from functions. 
+
+
+A function that takes another function (or several functions) as an argument is called a higher-order function.
+
+
+Higher-order functions that we have seen already: zipWith, map, fold and filter.
+
+
+Example: Quicksort (link to source code on cssegit)
+
+
+Quicksort is a well-known recursive sorting algorithm. 
+
+
+To apply its sorting strategy to a list, we first choose one element and then divide the rest of the list into (A) those elements that should go before the chosen element, (B) those elements equal to the chosen one, and (C) those that should go after.
+
+
+Then, we apply the same algorithm to the unsorted (A) and (C) lists. After enough recursive sorts, we concatenate everything back together and have a final sorted list.
+
+
+-- Type signature: any list with elements in the Ord typeclass can be sorted.
+quickSort :: (Ord a) => [a] -> [a]
+-- Base case:
+-- If the list is empty, do nothing.
+quickSort [] = []
+
+-- Recursive case:
+-- Pick the first element (x) as the "pivot"; sort the rest of the list recursively
+-- into the lessList and moreList segments.
+-- The pivot element is put in the middle (x : equalList).
+quickSort (x : xs) = (quickSort lessList) ++ (x : equalList) ++ (quickSort moreList)
+   where
+       lessList  = filter (< x) xs         -- See filter.
+       equalList = filter (== x) xs
+       moreList  = filter (> x) xs
+
+
+
+
+Using quickSort:
+
+
+birdList = ["Robin", "sparrow", "finch", "Cardinal", "Chickadee", "grackle"]
+
+
+quickSort birdList
+
+
+["Cardinal","Chickadee","Robin","finch","grackle","sparrow"]
+
+
+
+
+Because we're using simple comparison operator functions (<, ==, >) with the filters in quickSort, we get a simple lexicographic sorting of birdList, with upper case coming before lower case.
+
+
+The recursive case of quickSort can be rewritten using the compare function of the Ord typeclass in lambda functions within the filters:
+
+
+        -- Recursive case:
+quickSort compare (x : xs) = (quickSort compare less) ++ (x : equal) ++ (quickSort compare more)
+   where
+       less  = filter (\ y -> y `compare` x == LT) xs
+       equal = filter (\ y -> y `compare` x == EQ) xs
+       more  = filter (\ y -> y `compare` x == GT) xs
+
+
+With this version, it's obvious that the ordering of the list elements relies on the compare function. This version also happens to be a higher-order function, because we are passing a function to quickSort' as the first argument.
+
+
+quickSort' :: (Ord a) => (a -> a -> Ordering) -> [a] -> [a]
+-- Base case:
+-- No matter how we compare two things the base case doesn't change,
+-- so we use the _ "wildcard" to ignore the comparison function.
+quickSort' _ [] = []
+
+-- Recursive case:
+-- 'compare' is our comparison function.
+quickSort' compare (x : xs) = (quickSort' compare less) ++ (x : equal) ++ (quickSort' compare more)
+   where
+       less  = filter (\ y -> y `compare` x == LT) xs
+       equal = filter (\ y -> y `compare` x == EQ) xs
+       more  = filter (\ y -> y `compare` x == GT) xs
+
+
+The type definition of quickSort' is
+
+
+quickSort' :: (Ord a) => (a -> a -> Ordering) -> [a] -> [a]
+
+
+The (Ord a) => (a -> a -> Ordering) part is the definition of the function that is being passed to quickSort' as the first argument.
+
+
+If we replaced compare with another (Ord a) => a -> a -> Ordering function of our own, we could affect how quickSort orders the elements when sorting, such as a descending sort (instead of the default ascending sort) or case-insensitive String sorting:
+
+
+        -- This import has to be at the top of the .hs file:
+import Data.Char (toUpper)
+
+
+-- insensitive :: [Char] -> [Char] -> Ordering
+        insensitive string1 string2 = compare (map toUpper string1) (map toUpper string2)
+
+
+Using quickSort':
+
+
+birdList = ["Robin", "sparrow", "finch", "Cardinal", "Chickadee", "grackle"]
+
+
+        -- Note: Must pass in a compatible function ('compare') when calling quickSort'.
+quickSort' compare birdList 
+["Cardinal","Chickadee","Robin","finch","grackle","sparrow"]
+
+
+        -- Note: Must pass in a compatible function ('insensitive') when calling quickSort'.
+quickSort' insensitive birdList 
+["Cardinal","Chickadee","finch","grackle","Robin","sparrow"]
+
+
+
+
+Higher-Order Functions and Types
+
+
+The quickSort' function above has type 
+
+
+quickSort' :: (Ord a) => (a -> a -> Ordering) -> [a] -> [a]
+
+
+Most of the time, the type of a higher-order function provides a guideline about how to use it. 
+
+
+A straightforward way of reading the type signature above would be "quickSort' takes, as its first argument, a function that gives an ordering of two a objects. Its second argument is a list of a objects. Finally, it returns a new list of a objects". This is enough to correctly guess that it uses the given ordering function to sort the list.
+
+
+Note that the parentheses surrounding a -> a -> Ordering are mandatory for quickSort' to be a higher-order function. They specify that a -> a -> Ordering forms a single argument that happens to be a function. Without the parentheses, we would get a type signature of a -> a -> Ordering -> [a] -> [a] which accepts four arguments (none of which are themselves functions) instead of the desired two arguments, and that would not work as desired.
+
+
+
+
+
+
+Exercise - descending order function
+
+
+Write an ordering function for quickSort' that enables a descending sort. By "ordering function", we mean something like the insensitive function, which takes two arguments and returns an Ordering value (LT, EQ or GT). Use the function name compareDesc.
+
+
+Answer: 
+
+
+-- compareDesc :: Ord a => a -> a -> Ordering
+-- Enable descending sort by simply comparing 2 arguments in reverse.
+compareDesc arg1 arg2 = arg2 `compare` arg1
+
+
+
+
+
+
+Function manipulation
+
+
+Remember that in pure functional programming, functions are treated like any other value. Higher-order functions exist in Haskell to allow the manipulation of functions.
+Flipping arguments
+
+
+The flip function is a higher-order function that takes a function of two arguments and returns a version of the same function with the arguments swapped.
+
+
+flip :: (a -> b -> c) -> b -> a -> c
+
+flip in use:
+
+
+Prelude> (flip (/)) 3 1
+0.3333333333333333
+Prelude> (flip map) [1,2,3] (*2)
+[2,4,6]
+
+
+We could have used flip to write a version of the descending sort ordering function from the quickSort example:
+
+
+-- compareDesc' :: Ord a => a -> a -> Ordering
+-- Enable descending sort by flipping compare.
+compareDesc' arg1 arg2 = (flip compare) arg1 arg2
+
+
+Function Composition
+
+
+We've seen function composition before. The (.) composition operator is another higher-order function. It has the signature:
+
+
+(.) :: (b -> c) -> (a -> b) -> a -> c
+
+
+(.) takes two functions as arguments and returns a new function which applies both the second argument and then the first. The composition of functions f and g can expressed using a lambda:
+
+
+f . g = \ x -> f (g x)
+
+
+Types are important when using composition. Function f must take as its parameter a value that has the same type as g's return value. So the resulting function takes a parameter of the same type that g takes and returns a value of the same type that f returns. For example, the function composition expression
+
+
+negate . (* 3)
+
+
+returns a function that takes a number, multiplies it by 3 and then negates it.
+
+
+One of the uses for function composition is creating functions on the fly to pass to higher-order functions such as map, filter, foldl, foldr, etc. Lambdas are also commonly be used for that purpose.
+
+
+Example: Get an all-negative list of numbers from a list of numbers by taking each number's absolute
+         value and then negating it.
+
+
+                Using a map with a lambda function:
+
+
+ghci> map (\ x -> negate (abs x)) [5,-3,-6,7,-3,2,-19,24]  
+[-5,-3,-6,-7,-3,-2,-19,-24]  
+
+
+                Using a composition of the negate and abs functions:
+
+
+ghci> map (negate . abs) [5,-3,-6,7,-3,2,-19,24]  
+[-5,-3,-6,-7,-3,-2,-19,-24]  
+
+
+Function composition is right-associative, so we can compose many functions at a time. The expression 
+
+
+f (g (z x)) 
+
+
+is equivalent to the composed function
+
+
+(f . g . z) x
+
+
+Example: From a list of 3 number lists, [[1..5],[3..6],[1..7]], get a list of negated sums, where the
+         sums do not include the first number in the ranges.
+
+
+                Using a map with a lambda function:
+
+
+ghci> map (\ xs -> negate (sum (tail xs))) [[1..5],[3..6],[1..7]]  
+[-14,-15,-27]  
+
+
+                Using a composition of the negate, sum and tail functions:
+
+
+ghci> map (negate . sum . tail) [[1..5],[3..6],[1..7]]  
+[-14,-15,-27]  
+
+
+Function application with $
+
+
+The $ higher-order function is also called "function application". It is most commonly used to avoid using parentheses when combining functions.
+
+
+We can rewrite
+
+
+sum (map sqrt [1..130])
+
+
+as
+
+
+sum $ map sqrt [1..130]
+
+
+When $ is encountered, the expression on its right is applied as the parameter to the function on its left.
+
+
+Because $ is right-associative, f (g (z x)) is equal to f $ g $ z x.
+
+
+We can rewrite
+
+
+        sum (filter (> 10) (map (*2) [2..10]))
+
+
+as
+
+
+sum $ filter (> 10) $ map (*2) [2..10]
+
+
+
+
+
+First-Class Functions
+
+
+A programming language is said to have "first-class functions" if it supports passing functions as arguments to other functions, returning them as the values from other functions, and assigning them to variables or storing them in data structures.
+
+
+In languages with first-class functions, the names of functions do not have any special status. They are treated like ordinary variables with a function type.
+
+
+First-class functions are a necessity for the functional programming style, in which the use of higher-order functions is a standard practice. A simple example of a higher-order function is the map function, which takes, as its arguments, a function and a list, and returns a list formed by mapping (applying) the function to each member of the list. For a language to support mapping, it must support passing a function as an argument.
+
+
+Java Functional Programming
+
+
+In Java 8, functions became first class. You can take functions as input parameters of other functions, return functions from other functions and store functions as objects. This enables higher-order functions in Java, an essential part of functional programming.
+
+
+Storing a Java function in an Object
+
+
+In Java 8, the java.util.function.Function<T, R> interface was introduced. It can store a function which takes one argument and returns an object. The Generic T is the type of the argument and R the type of the object you return.
+
+
+Example: a compute function
+
+
+The following static compute method is a simple example of a higher-order function in Java. It takes a function and an Integer and applies the given function to the Integer:
+
+
+public static Integer compute(Function<Integer, Integer> function, Integer value) 
+{
+    return function.apply(value);
+}
+
+
+This method is highly generic. We don't know what function here will actually do. We just know that the function will be "applied" to the input value.
+
+
+To use this function to invert an Integer, a complete class definition might look like this:
+
+
+import java.util.function.Function; // import the Function interface
+// Or just do this // import java.util.function.*;
+
+
+public class JavaFunctionTest1 
+{
+    public static Integer compute(Function<Integer, Integer> function, Integer value) 
+    {
+        return function.apply(value);
+    }
+
+
+             // Simple invert method
+    private static Integer invert(Integer value) 
+    {
+        return -value;
+    }
+        
+    public static void main(String[] args)
+    {
+        Integer inp = 5;
+
+
+        // Instantiate a Function object 'invertFunction' and assign a method reference (invert):
+Function<Integer, Integer> invertFunction = JavaFunctionTest1::invert;
+
+
+// Pass invertFunction as an argument to compute along with inp:
+System.out.println( compute(invertFunction, inp) );
+    }
+}
+
+
+There are two lines of note in the code:
+
+
+1. return function.apply(value);
+
+
+The apply method of a Function object is how the Function will be called for the given value argument.
+
+
+    2. Function<Integer, Integer> invertFunction = JavaFunctionTest1::invert;
+
+
+A method reference is being used here. It is JavaFunctionTest1::invert. Note the lack of parentheses after invert. We assign the method invert to the Function object invertFunction. 
+
+
+Method references represents one of two ways to store a function in an object. The other way is by using lambda expressions.
+
+
+Java Lambdas
+
+
+A normal Java method to add two Integers would look like this:
+
+
+public Integer add(Integer a, Integer b) {
+    return a + b;
+}
+
+
+An equivalent Java 8 Lambda might look like this:
+
+
+        BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b;
+
+
+BiFunction is another Interface in java.util to represent a function with two generic arguments and one generic return object. In the parentheses of the Lambda, you define the input arguments (a, b). Giving them a type is optional. The Lambda can be written to look more like Java, if desired:
+
+
+BiFunction<Integer, Integer, Integer> add = (a, b) -> {
+    Integer result = a + b;
+    return result;
+};
+
+
+Calling the add BiFunction:
+
+
+import java.util.function.BiFunction;
+
+
+public class JavaFunctionTest1 
+{
+    public static void main(String[] args)
+    {
+        // Instantiate a BiFunction object 'add' and assign a Lambda function:
+        BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b;
+
+
+        // System.out.println(add(2, 2)); // Won't work. Must do instead ...
+        System.out.println(add.apply(2, 2));
+    }
+}
+
+
+
+
+The previous invert-an-integer example, using a Lambda instead of a method reference:
+
+
+import java.util.function.Function; // import the Function interface
+
+
+public class JavaFunctionTest2
+{
+    public static Integer compute(Function<Integer, Integer> function, Integer value) 
+    {
+        return function.apply(value);
+    }
+
+
+        
+    public static void main(String[] args)
+    {
+        Integer inp = 5;
+
+
+        // Instantiate a Function object 'invertFunction' and assign a Lambda function:
+Function<Integer, Integer> invertFunction = (a) -> -a;
+
+
+// Pass invertFunction as an argument to compute along with inp:
+System.out.println( compute(invertFunction, inp) );
+    }
+
+
+    /*
+     * Even simpler with an anonymous, in-line Lambda: 
+     *                  System.out.println( compute ( (a) -> -a, inp ) );
+     */
+    
+}
+
+
+
+
+Java Functional Interfaces
+
+
+/*
+ * Java8LambdaTest1.java: Java lambda expressions example
+ *
+ * An important way that Java lambdas are used is to define inline
+ * implementations (overrides) of a functional interface's method.
+ * A functional interface has a single method.
+ * 
+ * In this example, we use various types of lambda expressions to over-
+ * ride the 'operation' method of the MathOperation interface.
+ * 
+ * Next, we use lambdas to override the 'sayMessage' method of the
+ * GreetingService interface.
+ */
+
+
+public class Java8LambdaTest1
+{
+        public static void main(String[] args)
+        {
+                Java8LambdaTest1 tester = new Java8LambdaTest1();                
+                
+                
+                // In the object declarations below, the lambda expressions
+                // are to the right of the assignment operator (=).
+                // The lambda expressions override the 'operation' method
+                // of the MathOperation interface:
+                
+                // ... with type declaration
+                MathOperation addition = (int a, int b) -> a + b;
+                // ... without type declaration
+                MathOperation subtraction = (a, b) -> a - b;
+                // ... with a return statement, with curly braces
+                MathOperation multiplication = (int a, int b) -> { return a * b; };
+                // ... without a return or curly braces
+                MathOperation division = (int a, int b) -> a / b;
+                
+                System.out.println("10 + 5 = " + tester.operate(10, 5, addition));
+                System.out.println("10 - 5 = " + tester.operate(10, 5, subtraction));
+                System.out.println("10 x 5 = " + tester.operate(10, 5, multiplication));
+                System.out.println("10 / 5 = " + tester.operate(10, 5, division));                
+                
+                
+                // Override the 'sayMessage' method of the GreetingService
+                // interface using lambda expressions;
+                // ... without parentheses around input param
+                GreetingService greetService1 = message ->
+                        System.out.println("Hello " + message);
+                // ... with parentheses around input param
+                GreetingService greetService2 = (message) ->
+                        System.out.println("Welcome " + message);
+                
+                greetService1.sayMessage("Billy");
+                greetService2.sayMessage("Bob");
+        }
+
+
+
+
+        /** functional interfaces - single method only */
+        interface MathOperation
+        {
+                int operation(int a, int b);
+        }
+        
+        interface GreetingService
+        {
+                void sayMessage(String message);
+        }
+        
+        /** utility method used for math operations */
+        private int operate(int a, int b, MathOperation mathOperation)
+        {
+                return mathOperation.operation(a, b);
+        }
+}

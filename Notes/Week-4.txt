@@ -1,0 +1,475 @@
+﻿CS-498/598: Functional Programming - Week 4
+
+
+
+
+CS-498/598: Functional Programming - Week 4
+More on map
+Case Expressions
+More on Types
+Typeclasses
+User-Defined Type Declarations
+'data' and Constructor Functions
+'type' for making type synonyms
+Enumerations
+Local Function Definitions and Lambda Expressions
+Anonymous Functions - Lambdas
+
+
+
+
+More on map
+* Continuing from the map/foldl/foldr discussion from last week …
+* map applies a function to every element of a list.
+
+
+                map f [x0,x1,x2] -- > [f x0, f x1, f x2]
+
+
+* Maps and list comprehensions can do the same thing.
+
+        map some_function some_list
+
+        [some_function x | x <- some_list]
+
+   * Maps can be easier to understand and more compact in writing, especially if the output function is larger.
+
+      * Like list comprehensions, the result of a map is a list.
+
+        Prelude> :t map
+map :: (a -> b) -> [a] -> [b]
+
+        map fst [(3, 4), (2, 3)] -- Get first item of each tuple in the list.
+        [3,2]                    -- result
+
+
+         * When writing a map, the result must be something that can be put in a list.
+
+myList = ["Eenie", "Meenie", "Miney", "Mo"]
+-- This illegal map of the print function to myList will not result in a list.
+map print myList
+-- Mapping the length function will work and will return a list of Int lengths.
+map length myList -- result: [5,6,5,2]
+
+
+            * Mapping your own function to a list
+            * If a problem requires one or more list tranformations, a functional programming approach is to write functions and then map those functions to lists.
+
+myList2 = [("Eenie", 16), ("Meenie", 18), ("Miney", 21), ("Mo", 50)]
+
+myFn :: (String, Integer) -> String
+myFn tup
+        | age == 16 = name ++ ", age " ++ age' ++ "\n\tcan drive." -- returns a String
+        | age == 18 = name ++ ", age " ++ age' ++ "\n\tcan vote."
+        | age == 21 = name ++ ", age " ++ age' ++ "\n\tcan drink."
+        | age == 50 = name ++ ", age " ++ age' ++ "\n\tis middle-aged."
+        | otherwise = name ++ ", age " ++ age' ++ "."
+        where
+                name = fst tup
+                age  = snd tup
+                age' = show age -- String age
+
+-- To map myFn to myList2,
+map myFn myList2
+-- Resulting list from map:
+["Eenie, age 16\n\tcan drive.","Meenie, age 18\n\tcan vote.","Miney, age 21\n\tcan drink.","Mo, age 50\n\tis middle-aged."]
+
+
+
+
+Case Expressions
+
+
+               * "Case" expressions are expressions like "if-else" and "let-in".
+               * With "case", we can evaluate expressions based on the possible cases of the value of a variable and we can also do pattern matching.
+               * In fact, function pattern matches are just abstracted case expressions.
+               * The following two pieces of code do the same thing
+(note the use of the "error" function):
+
+-- recursive definition of a head' function using pattern matches
+head' :: [a] -> a                           -- "->" means "maps to"
+head' [] = error "No head for empty lists!" -- base case
+head' (x:_) = x                 -- Could also have written (x:xs)
+
+        -- recursive definition of a head' function using 2 cases of xs
+        head' :: [a] -> a  
+head' xs = case xs of [] -> error "No head for empty lists!" -- base case
+                      (x:_) -> x 
+
+
+                  * Synopsis
+
+
+        case expression of pattern -> result
+                           pattern -> result
+                           pattern -> result
+                           …
+
+
+                  * The expression is matched against the patterns.
+                  * The first pattern that matches the expression is used.
+                  * If it falls through the whole case expression and no suitable pattern is found, a runtime error occurs.
+
+
+                  * Pattern matching on function parameters can only be done when defining functions, but case expressions (being true expressions) can be used pretty much anywhere.
+
+        describeList :: [a] -> String  
+describeList xs = "The list is " ++ case xs of []  -> "empty."  
+                                               [x] -> "a singleton list."   
+                                               xs  -> "a longer list."
+
+
+
+
+
+
+More on Types
+Typeclasses
+
+
+                     * Typeclasses correspond to sets of types, with certain operations defined for them.
+                     * We have encountered typeclasses when looking at function type declarations in ghci, such as for the addition operator (+):
+
+Prelude> :t (+)
+(+) :: Num a => a -> a -> a
+
+
+                        * The typeclass for (+) appears before the => symbol (means "implies").
+                        * The typeclass is Num, meaning that a can be any numeric type.
+                        * The (+) will add two "instances of Num" and return an "instance of Num."
+                        * The Num typeclass encompasses the Int, Integer, Float and Double types.
+
+                           * Polymorphic values
+                           * A number that looks like an integer literal is seen differently in the Haskell type system.
+                           * This is to enable type inferences.
+
+        :t (-7)
+        (-7) :: Num a => a
+
+
+                              * -7 is seen as generic Num so that it can be used in both integer and floating point expressions.
+
+
+                              * A number that looks like a double literal is also polymorphic.
+
+        :t 3.14
+        3.14 :: Fractional p => p
+
+                                 * 3.14 is also a polymorphic value, but one of the Fractional class, which is a subset of Num
+                                 * 3.14, being a Fractional polymorphic, can be Float or Double.
+                                 * Every Fractional is a Num, but not every Num is a Fractional
+                                 * Ints and Integers are not Fractional.
+
+
+
+
+                                 * Some common typeclasses besides Num and Fractional
+                                 * Eq is the typeclass for types of values which can be compared for equality.
+                                 * The equality operator (==) uses typeclass Eq.
+
+(==) :: Eq a => a -> a -> Bool
+
+
+                                    * Foldable is the typeclass for data structures that group values in different ways.
+                                    * This applies to lists and certain list-related methods but go beyond lists.
+                                    * The list length function uses Foldable.
+
+length :: Foldable t => t a -> Int
+
+
+                                       * Ord is for types that have an ordering.
+                                       * Things that have Ord typeclass must also be in the Eq typeclass.
+                                       * Almost all the basic data types in Haskell are members of the Ord class.
+
+
+        (>) :: Ord a => a -> a -> Bool
+
+
+                                       * Ord provides a function called compare, with type:
+
+
+compare :: (Ord a) => a -> a -> Ordering
+
+
+                                       * compare takes two values and compares them, returning an Ordering value, which is LT if the first value is less than the second, EQ if it is equal and GT if it is greater than.
+
+
+
+
+                                       * Show is for types that can be presented as strings.
+                                       * If it can be converted to a String with the show function, it belongs to Show.
+
+ghci> show 3  
+"3"  
+ghci> show 5.334  
+"5.334"
+
+
+
+
+
+
+User-Defined Type Declarations
+
+
+                                          * We do not have to work with just the types provided by default with the language. 
+
+
+                                          * Haskell has three basic ways to declare a new type.
+                                          * The data declaration, which defines new data types.
+                                          * The type declaration for type synonyms, that is, alternative names for existing types.
+                                          * The newtype declaration, which defines new data types equivalent to existing ones.
+                                          * newtype will not be covered in this class.
+
+                                             * See also the custom_types.hs example.
+
+
+'data' and Constructor Functions
+
+
+                                             * data is used to define new data types mostly using existing ones as building blocks.
+                                             * Example: a data structure for elements in a simple list of anniversaries:
+
+data Anniversary = Birthday String Int Int Int          -- name, year, month, day
+                                 | Wedding String String Int Int Int -- spouse name 1, spouse name 2,
+                                                                      year, month, day
+
+
+
+
+                                                * This declares a new data type Anniversary, which can be either (|) a Birthday or a Wedding. 
+                                                * A Birthday contains one string and three integers, and a Wedding contains two strings and three integers. 
+                                                * The definitions of the two possibilities are separated by the pipe (|).
+                                                * With the declaration, we also get two constructor functions for Anniversary, called 'Birthday' and 'Wedding'.
+                                                * These functions provide a way to build a new Anniversary.
+                                                * Type names and constructor functions must start with Capital Letters.
+                                                * Calling constructor functions
+                                                * Construct Birthday Anniversary for John Smith, born on 3rd July 1968.
+
+johnSmith :: Anniversary
+johnSmith = Birthday "John Smith" 1968 7 3
+
+
+                                                   * Construct Wedding Anniversary for marriage to Jane Smith on 4th March 1987.
+
+
+                        smithWedding :: Anniversary
+smithWedding = Wedding "John Smith" "Jane Smith" 1987 3 4
+
+
+                                                   * Put both Anniversaries into a list.
+
+
+anniversariesOfJohnSmith :: [Anniversary]
+anniversariesOfJohnSmith = [johnSmith, smithWedding]
+
+
+                                                   * deconstructing data types
+                                                   * In order to access the contents of new data type variables, we can write functions.
+
+showDate :: Int -> Int -> Int -> String
+showDate y m d = show y ++ "-" ++ show m ++ "-" ++ show d
+
+
+showAnniversary :: Anniversary -> String
+
+
+-- show Birthday
+-- Note: Paretheses are required.
+showAnniversary (Birthday name year month day) =
+   name ++ " born " ++ showDate year month day
+
+
+-- show Wedding Anniversary
+showAnniversary (Wedding name1 name2 year month day) =
+   name1 ++ " married " ++ name2 ++ " on " ++ showDate year month day
+
+
+                                                      * To handle both "Birthday" and "Wedding" Anniversaries, we needed to provide two function definitions (overloading), one for each constructor.
+
+
+                                                      * User-defined data types in Haskell can automatically become instances of some typeclasses (like Show, Eq) by 'deriving' from them.
+
+
+                data Customer = Customer String String Double
+deriving Show
+
+data Customer = Customer String String Double
+deriving (Eq, Ord, Show)
+
+
+'type' for making type synonyms
+
+
+                                                      * The code below says that a Name is now a synonym for a String.
+                                                      * Any function that takes a String will now take a Name as well.
+
+type Name = String
+
+
+                                                         * The code below says that an AnniversaryBook is a synonym for a list of Anniversary.
+
+        type AnniversaryBook = [Anniversary]
+
+
+                                                            * Type synonyms are mostly used for convenience and to aid in readability.
+
+
+
+
+Enumerations
+
+
+                                                            * A special case of the 'data' declaration
+                                                            * A data type where none of the constructor functions have any arguments
+
+
+data Month = January | February | March | April | May | June | July
+           | August | September | October | November | December
+
+myFavoriteMonth = April -- myFavoriteMonth :: Month
+
+
+                                                            * Enumerations can be used to define a type with limited possible values.
+                                                            * The constructor functions then act like named constants or symbols.
+                                                            * A Month type variable can then take only 1 of 12 possible values.
+
+
+
+
+Local Function Definitions and Lambda Expressions
+
+
+As discussed in Week 2, let and where are useful for local definitions.
+
+
+They can also be used to create local function definitions, that is, function definitions within function definitions.
+
+
+Here, sumStr calls the addStr function through a foldl:
+
+
+-- Add a String num like "1" to a Float x.
+addStr :: Float -> String -> Float
+addStr x str = x + read str
+
+
+-- Produce the sum of a list of String nums like ["1", "2", "3", "4.5", …].
+sumStr :: [String] -> Float
+sumStr lst = foldl addStr 0.0 lst
+-- Definition of sumStr could be shortened: sumStr = fold addStr 0.0
+
+
+-- Calling sumStr in ghci
+Prelude> sumStr ["1", "2", "3"]
+6.0
+
+
+If we never need addStr anywhere else, we could rewrite sumStr using local bindings, using either a let binding or with a where clause. 
+
+
+With a let binding...
+
+
+sumStr' lst =
+   let addStr x str = x + read str -- Note: local definition of addStr
+   in foldl addStr 0.0 lst
+
+
+Or with a where clause...
+
+
+sumStr' lst = foldl addStr 0.0 lst
+   where addStr x str = x + read str -- Note: local definition of addStr
+
+
+The difference appears to be just a question of style. But a let binding is more flexible than where because let..in is an expression.
+
+
+f x =
+    if x > 0
+        then (let lsq = (log x) ^ 2 in tan lsq) * sin x -- Local definition of lsq
+        else 0
+
+
+The let..in expression within the above parentheses is self-contained and evaluates to the tangent of the square of the logarithm of x. Note that the scope of lsq does not extend beyond the parentheses. 
+
+
+All local function definitions will have local scope only, so they should be used for small functions.
+
+
+Anonymous Functions - Lambdas
+
+
+There's a reason why the official Haskell logo is based on the Greek letter lambda.
+
+
+A "lambda abstraction" is another name for an anonymous function. The usual notation for writing a lambda abstration is
+ \lambda x \to x^2 
+
+Another common, equivalent notation is
+  \lambda x . \ x^2 
+
+
+In Haskell, the Greek letter lambda is replaced by the backslash character ('\'). Similarly, the arrow is replaced by the ASCII character sequence '->'.
+
+
+So, the lambda abstraction above would be written in Haskell as the lambda expression
+
+ \ x -> x * x
+
+
+There is a mathematical theory devoted to expressing computation entirely using lambda abstractions: the lambda calculus. Most functional programming languages (including Haskell) are based upon some extension of the lambda calculus.
+
+
+When a lambda abstraction is applied to a value, like 7,
+
+
+ (\lambda x \to x^2 ) \ 7 
+
+
+
+the result of the expression is determined by replacing every free occurrence of the parameter variable (in this case x) with the parameter value (in this case 7). This is called a beta reduction.
+
+
+We looked at local function definitions (addStr) above. Lambda expressions (or just "lambdas") take the idea of local function definitions further.
+
+
+Why create a formal name for a local function like addStr when it only exists within another function's definition, never to be used again? Instead, we can make it an anonymous function ("lambda function"). Then, sumStr could be defined like this:
+
+
+sumStr' lst = foldl (\ x str -> x + read str) 0.0 lst
+
+
+Lambdas can be handy for writing one-off functions to be used with maps, folds and their siblings, especially where the function in question is simple.
+
+
+Since variables are bound in a lambda expression (i.e, bound to the function arguments, just like in a regular function definition), pattern matching can be used in them as well. A trivial example would be redefining tail with a lambda:
+
+
+tail' = (\ (_:xs) -> xs) -- The pattern being matched is a non-empty list (_:xs).
+
+
+The following let-in or where bindings can be converted to lambdas:
+
+
+-- Map the function f to the list xs
+map f xs 
+where f x = x * 2 + 3 -- local definition of f
+
+
+-- Equivalent map using a lambda:
+map (\ x -> x * 2 + 3) xs
+
+
+
+
+
+
+-- Fold (right) the list xs using function f and initial value 1
+let f x y = read x + y 
+in foldr f 1 xs
+
+
+        -- Equivalent foldr using a lambda:
+        foldr (\ x y -> read x + y) 1 xs

@@ -1,0 +1,155 @@
+﻿CS-498/598
+Summer 2018
+Assignment 1
+
+
+Deadline: Wednesday, 5/30/18, 11:59pm
+Name: Todd Qualiano
+
+
+Save this file as assignment1.txt. Insert your name and answers and dropbox it.
+
+
+(5 points)
+1. Give one reason why the following code is incorrect in Haskell:
+
+
+  x = 4
+  x = ((x * 2))
+  
+  
+  
+  In Haskell 'variables' cannot be changed once they are assigned to a value. 
+  In other words, every variable assigned a value in this way is immutable. If one 
+  attempts to compile this code, the compiler will throw an error: "Multiple 
+  declarations of 'x'... Failed, modules loaded: none."
+  
+  
+
+(15 points)
+2. An alternative to the / (division) operator is the div function.
+
+
+* Show a usage of the div function as an infix function to divide a numerator and denominator.
+
+  y = 10 `div` 6 
+
+
+* What is the difference between "/" and "div"?
+
+  div will always return an Integer whereas / will return a Double.
+  
+
+* If num = 456, combine the div and mod functions to get the middle digit of num.
+
+  num = 456
+  num' = mod (div num 10) 10
+
+
+  
+(5 points)
+3. What is the result of the expression 
+
+
+abs -6 
+
+
+in Haskell, where abs returns the absolute value of its argument? Explain the
+result.
+
+
+
+  When the abs function is passed with the argument '-6' the result is an error.
+  This is because Haskell does not recognize '-6' as an Integer when it is passed
+  as an argument to a function.  
+  To calculate the absolute value of -6 in Haskell, a user must surrond -6 with parentheses
+  as seen below.
+  
+  abs (-6)
+  
+  Interestingly enough though, the following is legal and produces the anticipated
+  result:
+  
+  z = -6 + 5
+  z' = abs z
+  
+  However, something like 
+  
+  z'' = 5 + -6
+  
+  is illegal unless '-6' is surrounded by parentheses--we run into the same problem
+  as we did above.
+
+  
+  
+(5 points)
+4. Haskell automatically infers the type of variables and lists. What would Haskell
+   infer the type of the following list to be?
+
+
+myCombo = [1, 2, -5, -5, 5.1]
+
+
+
+   [Double]
+
+
+   
+(5 points)
+5. Would the following be a legal list in Haskell?
+
+
+        myCombo = [1, 'a', "auto"]
+
+	
+	This list is not legal in Haskell. All the elements of a list in Haskell must
+	be of the same type.
+
+	
+	
+(5 points)
+6. What would be the type of the following variable in Haskell? Your answer must come
+   from using :t in ghci.
+
+
+        myDuck = "Daffy"
+
+
+	myDuck :: [Char]
+	
+
+	
+(10 points)
+7. The head, tail, length, take and other list functions can be applied to Strings.
+   Say that you have the variables firstName and lastName that contain a first name
+   and last name as Strings. Write Haskell code to do the following:
+
+
+   * Make a variable f equal to the first character of firstName.
+   * Make a variable la equal to the first 2 characters of lastName.
+   * Make a variable fla equal to the concatenation of f and la.
+   * If firstName is "daffy" and lastName is "duck", then fla would be "ddu".
+  
+  
+  
+  firstName = "daffy"
+  lastName = "duck"
+  
+  f = head firstName
+  la = take 2 lastName
+  fla = f : la
+  
+
+
+(10 points)
+8. Write a Haskell function called greetName that accepts a String input (name) and
+   returns "Hello, ", followed by the value of name and then a "!". For name = 
+   "Daffy", the function would return "Hello, Daffy!".
+   
+   
+   
+   greetName :: String -> String
+   greetName name = "Hello, " ++ name ++ "!"
+   
+   
+   

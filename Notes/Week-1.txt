@@ -1,0 +1,143 @@
+﻿CS-498/598: Functional Programming - Week 1
+
+
+Class Introduction
+
+
+* Review syllabus (ecampus)
+Intro to Functional Programming
+
+
+* Functional programming
+   * A style of programming in which the primary method of computation is the application of functions to arguments.
+   * A style of programming in which expressions are more important than using statements.
+   * In functional programming we want to compose programs using expressions.
+      * These expressions deliver a value, so we can take two or more expressions that deliver values and compose them into bigger expressions.
+   * Imperative programming
+      * Statements are more important.
+      * When you compose statements, the statements have an implicit side-effect on the global state and they communicate values via that global state.
+      * Example of imperative Java (sum integers from 1 to 10):
+
+        int total = 0;
+        for (int i = 1; i <= 10; i++) {
+                total = total + i;
+        }
+
+      * The above imperative style is based on statements:
+   * The first thing we do is we declare a variable total of type int.
+   * We initialize it to zero.
+   * Then we write a for loop with a loop variable, i.
+   * Then for each loop interation, we increment the total variable by i.
+   * We have statements, we have mutable state and we imperatively execute statement after statement, updating the state to compute the result.
+   * We had to change the value of total 10 times and the value of i 11 times, a total of 21 state changes, to compute the sum.
+   * The same problem solved using a functional approach (Haskell):
+
+        mySum = sum [1..10]
+
+      * We see an expression here.
+      * [1..10] is an expression that creates a list of the integers from one to ten.
+      * The sum function is applied to the expression to compute the sum.
+      * There are no state changes.
+      * In fact, assigning a different value to mySum later in the same program would not even be allowed.
+
+
+      * From a purist approach, functional programming would be done using only mathematical functions.
+
+
+      * Functional languages 
+      * Many contemporary programming languages such as Hack/PHP, C#, Visual Basic, F#, C++, JavaScript, Python, Ruby, Java, Scala, Clojure, Groovy, Racket, etc. support higher-order programming via the functional programming concept of closures or lambda expressions.
+      * We will use Haskell as the medium for understanding the basic principles of functional programming. 
+      * Haskell is a pure functional language so it is entirely appropriate for learning the essential ingredients of programming using mathematical functions.
+      * Once we understand pure functional programming and how to think like functional programmers, we will try our hand at functional programming in Java.
+Intro to Haskell
+
+
+      * Installing Haskell
+      * Go to http://haskell.org/downloads.
+      * Installing the Haskell Platform is recommended.
+      * Haskell documentation
+      * The most up-to-date documentation is at the official site: http://haskell.org
+      * Haskell glossary
+      * https://wiki.haskell.org/Pronunciation
+      * Haskell quick-start
+      * https://wiki.haskell.org/Learn_Haskell_in_10_minutes
+      * Haskell tutorial
+      * We'll follow some of the Haskell tutorial shown at https://www.youtube.com/watch?v=02_H3LjqMr8 as a hands-on introduction.
+      * The tutorial script, haskell-tutorial.hs, will be kept up-to-date at https://cssegit.monmouth.edu:2443/jchung/cs498598fpr/blob/master/src/haskell/tutorials/haskell-tutorial.hs.
+      * Haskell surprises (for those used to imperative programming)
+      * Everything is immutable.
+      * Once you initialize a variable with a value, the variable's value can't be changed.
+      * Can't rightly be called "variables" then.
+      * All Haskell variables are constants.
+      * "In purely functional programming you don't tell the computer what to do as such (imperatives) but rather you tell it what stuff is." (link)
+      * In Haskell, what we think of as an assignment using = is more properly called an "equation".
+      * x = 2
+      * mySumOf100 = sum [1..100]
+      * Haskell veterans call these "equations", not "assignments."
+      * Haskell has no repetition structures (for or while loops).
+      * Function recursion is used a lot.
+      * A different way to achieve repetition.
+      * Forces you to think of other ways to solve problems that you thought required repetition.
+      * Functions are Haskell program building blocks.
+      * Functions can be passed as an input parameter to other functions (so-called higher-order functions).
+      * Example of higher-order function: zipWith
+      * Haskell is lazy.
+      * Doesn't execute more than is needed.
+      * Only executes when absolutely necessary.
+      * This is why you can define infinite lists in Haskell and get away with it.
+________________
+Haskell Lab 1
+
+
+In Geany or text editor, start a new Haskell script called lab1.hs.
+
+
+Part a)
+
+
+In lab1.hs, write expressions to do the following:
+
+
+         * Multiply the first 5 positive numbers (1-5)
+        x1 = product [1..5]
+         * Multiply the first 30 positive numbers (1-30)
+        x2 = product [1..30]
+         * Add the numbers from 1 to 100
+        x3 = sum [1..100]
+         * Add the odd numbers from 1 to 99
+        x4 = sum [1, 3..99]
+         * What is the remainder when 456 is divided by 10?
+        -- mod as prefix function
+        x5 = mod 456 10
+         * What is the remainder when 365 is divided by 7?
+        -- mod as infix function
+        x6 = 365 `mod` 7
+         * Produce the first letter of the string "first".
+        f = head "first"
+         * Drop the first letter from the string "rest".
+        est = tail "rest"
+         * Get the second letter of the string "Haskell".
+        ha = take 2 "Haskell"
+        a = tail ha
+
+        a = "Haskell" !! 1
+
+        a = head (tail "Haskell")
+
+
+part b)
+
+
+In lab1.hs, define a function secondLastElem that finds the 2nd to last element of a list. When you test the function in ghci, it should work like this:
+
+
+Prelude> secondLastElem [1,2,3,4]
+3
+Prelude> secondLastElem ['a'..'z']
+'y'
+
+
+
+
+-- secondLastElem :: [a] -> a
+secondLastElem a = last (init a)

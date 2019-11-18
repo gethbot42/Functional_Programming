@@ -1,0 +1,143 @@
+﻿CS-498/598: Functional Programming - Week 6
+CS-498/598: Functional Programming - Week 6
+More Java Functional Programming
+Java Streams API
+Creating A Stream
+The map Method
+The filter Method
+Reduction Operations
+
+
+More Java Functional Programming
+
+
+We last looked at the Function interface that was introduced with Java 8, which enables first-class functions, higher-order functions and lambda expressions in Java. 
+Java Streams API
+
+
+When working with data structures in functional programming, particularly lists, the programmer thinks in terms of recursion and higher-order functions such as maps, filters and folds, rather than repetition structures (loops). To enable functional practices with lists, the Java Streams API was introduced. The Java Streams API allows the programmer to apply higher-order functions to sequences of elements, such as lists and arrays.
+
+
+Creating a Stream
+
+
+See the example Java source code for this section.
+
+
+A stream is just a sequence of items. There are many approaches to stream creation. In the following, we’ll focus on generating streams from lists and arrays.
+
+
+In Java 8, every class which implements the java.util.Collection interface has a stream() method which allows you to convert its instances into Stream objects. The following example converts an ArrayList of Integer objects into a Stream:
+
+
+        // Some or all of the following imports may be required.
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+
+// Create an ArrayList
+List<Integer> myList = new ArrayList<Integer>();
+myList.add(1);
+myList.add(5);
+myList.add(8);
+
+
+// Convert it into a Stream
+Stream<Integer> myStream = myList.stream();
+
+
+If using Arrays instead of Lists,
+
+
+// Create an array
+Integer[] myArray = {1, 5, 8};
+
+
+// Convert it into a Stream
+Stream<Integer> myStream = Arrays.stream(myArray);
+
+
+The map Method
+
+
+Once you have a Stream object, you can use a variety of methods to transform it into another Stream object. A classic functional method is map.
+
+
+The map method takes a lambda expression as its only argument, and uses it to change every individual element in a stream. Its return value is a new Stream object containing the changed elements.
+
+
+Example: Use map to convert all elements in an Array of strings to uppercase.
+
+
+Start by converting the array into a Stream:
+
+
+String[] myArray = new String[] {"eenie", "meenie", "miney", "moe"};
+Stream<String> myStream = Arrays.stream(myArray);
+
+
+Call the map method, passing a lambda expression which converts a string to uppercase, as its sole argument:
+
+
+        Stream<String> myNewStream = myStream.map(s -> s.toUpperCase());
+
+
+The map method of a Stream object returns another Stream object, which we have assigned to myNewStream. The myNewStream object contains the changed strings. To get a new String array out of myNewStream, use its toArray method:
+
+
+String[] myNewArray = myNewStream.toArray(String[]::new);
+
+
+The filter Method
+
+
+The Stream map method processes every element in a Stream object and returns a Stream with the same number of elements. To work with only a subset of the elements, use the filter method.
+
+
+Like the map method, the filter method expects a lambda expression as its argument. However, the lambda expression passed to it must always return a boolean value, which determines whether or not the processed element should be part of the resulting Stream object.
+
+
+Example: Create a subset of an Array of Strings which contains only those Strings whose length is more than four characters.
+
+
+String[] mySmallerArray = Arrays.stream(myArray).filter(s -> s.length() > 4).toArray(String[]::new);
+
+
+In the above statement, all the Stream methods have been chained to avoid storing references to intermediate Stream objects.
+
+
+Reduction Operations
+
+
+A reduction operation is one which allows you to compute a result using all the elements present in a Stream. Reduction operations are also called "terminal" operations because they are always present at the end of a chain of Stream methods.
+
+
+Java 8 includes several reduction methods, such as sum, average and count, which allow performing arithmetic operations on Stream objects and to get numbers as results. 
+
+
+Example, find the sum of an array of integers:
+
+
+int myArray[] = { 1, 5, 8 };
+int sum = Arrays.stream(myArray).sum();
+
+
+To perform more complex reduction operations, there is the reduce method (like Haskell fold functions). Unlike the map and filter methods, the reduce method expects two arguments: an identity element, and a lambda expression. 
+
+
+The identity element is an element which does not alter the result of the reduction operation. For example, if you are trying to find the product of all the elements in a stream of numbers, the identity element would be the number 1. For some reduce (fold) operations, think of the identity element as "starting value."
+
+
+The lambda expression that you pass to the reduce method must be capable of handling two inputs: a "partial result" of the reduction operation, and the current element of the stream. A partial result is the result obtained after processing all the elements of the stream that came before the current element.
+
+
+Example: Use the reduce method to concatenate all the elements in an array of String objects:
+
+
+String[] myArray = { "this", "is", "a", "sentence" };
+String result = Arrays.stream(myArray).reduce("", (a,b) -> a + b);
+
+
+In the above usage of reduce, the identify element (starting value) is "". In the lambda expression "(a,b) -> a + b", the partial result is a, and the current element is b. In Haskell, this would be the equivalent of a foldl (fold left) operation.

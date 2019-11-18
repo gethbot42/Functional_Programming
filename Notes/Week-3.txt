@@ -1,0 +1,551 @@
+﻿CS-498/598: Functional Programming - Week 3
+
+
+
+
+CS-498/598: Functional Programming - Week 3
+More on I/O, do
+IO Example: Number guessing game
+Simple File I/O
+List Comprehensions
+I/O, List Comprehension Example: Starman
+Recursive Functions on Lists
+Computing with lists
+Recursion on lists
+Some examples of recursion on lists
+Computations over lists
+Function composition
+Performing an operation on every element of a list: map
+Folding a list (reduction)
+Functional Maps and Folds versus Imperative Loops
+
+
+
+
+More on I/O, do
+
+-- basicIO.hs
+
+
+-- Optional for this program:
+        module Main where
+
+
+main = do
+          -- Make sure indentation under do is consistent.
+          putStrLn "Enter your num:"
+          x <- getLine
+          -- x is a string, so apply read to make xx an Integer
+          let xx = read x :: Integer
+          let y = doubleSmallNumber xx
+          putStr "Your num is "
+          -- Can't print number y with putStr, so use print
+          print y
+          -- Or use the show function which converts to string
+          -- putStrLn (show y)
+
+
+
+
+-- The order in which the functions are defined does not matter.
+doubleSmallNumber x = if x > 100 then 
+ x
+                      else
+ x*2
+        
+
+
+-- Alternative function using guards
+doubleSmallNumber' x
+                          | x > 100   = x
+                          | otherwise = x * 2
+
+
+
+
+* We have thus far used pure functions, which take values as arguments, do some processing of those values, then return a result value.
+   * A pure function does not depend on the "state of the world".
+      * also doesn't affect the "state of the world", i.e., doesn't have "side-effects."
+   * The computation is entirely self-contained and independent.
+   * Given the same arguments, a pure function will always return the same result.
+
+
+* I/O is not pure.
+   * Input and output (I/O) operations are not pure.
+      * They influence and interact with the "outside world".
+      * The getLine function reads input from the user and returns it as a special kind of String value — an IO String.
+         * IO String - "IO wrapped String"
+      * The putStr, putStrLn and print functions take input arguments and display them on the terminal, returning an empty IO value, i.e. IO ().
+         * I.e., we know from a function’s type whether it is involved with I/O.
+
+
+* Sequencing actions with do
+   * do blocks are used for sequencing operations when the order of the operations matters.
+      * Typically, order matters in I/O operations.
+   * In the simple function below, I/O operations are being sequenced under do:
+
+let greet = do
+   putStrLn "Enter two planet names on separate lines below:"
+    planet <- getLine
+    home <- getLine
+    putStrLn ("greetings " ++ planet ++ "ling.") -- () required here
+    putStrLn ("I am from " ++ home ++ ".")
+    putStrLn "Take me to your leader."
+
+
+   * Note: IO functions can be used outside of do blocks in main functions. For example,
+
+        -- printFactorial :: int -> IO ()
+        -- Note this function's return type.
+printFactorial 1 = putStrLn "1"
+printFactorial n = do putStr (show n ++ " * ")
+              printFactorial (n - 1)
+
+      * If you have a function that does I/O of any type, that function can't return anything other than an IO type.
+      * If a function contains IO and needs to return the value of a non-IO type, it must contain a call to the return function. For example:
+
+
+main = do x <- inputFn
+          print x
+
+
+-- inputFn :: IO Int
+inputFn = do putStrLn "Enter your number:"
+             x <- getLine
+             -- x is a string, so apply read to make xx an Int
+             let xx = read x :: Int
+             return xx
+
+      * Even though the inputFn function above returns an Int, its type is "IO Int", not "Int".
+      * "IO Int" can be read "IO wrapped Int".
+      * This marks inputFn as a not pure function.
+
+
+      * Inside a do block, we associate the results of IO functions with variable names using <- (the "from" operator).
+
+        planet <- getLine
+            home <- getLine
+
+
+         * Inside a do block, we associate pure function results with names using the let expression and = (the "is" operator).
+
+        let xx = read x :: Integer
+        let y = doubleSmallNumber xx
+
+                let a = reverse "Alfred"
+    b = reverse "Hitchcock"
+in "Sir " ++ a ++ " " ++ b
+
+
+            * The IO monad
+            * A sequence of I/O actions is described as being in the IO Monad.
+            * More on monads later.
+            * Simplified rules related to the IO monad can be found here: https://bit.ly/2Hi89JZ
+
+
+
+
+IO Example: Number guessing game
+
+
+            * Also introduces random number generation with the System.Random module.
+
+
+            * System.Random may not be installed on your computer.
+            * Check in ghci by running
+
+        import System.Random
+
+               * You will need to start a terminal and run the following commands to install the random module.
+
+
+                        cabal update
+                        cabal install random
+
+
+               * On macOS, if you installed the Haskell Platform, the System.Random module may not be loadable until you run the following command:
+
+
+                        sudo ghc-pkg recache
+
+
+
+
+        -- guessNumber.hs
+        -- Compile with 'ghc guessNumber.hs' and and run './guessNumber',
+-- or run with 'runghc guessNumber.hs'.
+
+
+module Main where
+
+
+import System.Random
+
+
+main :: IO ()
+main = do putStrLn "Try to guess the secret word ([1-100])..."
+          secret <- randomRIO (1, 100)
+          play secret
+
+
+
+
+play :: Int -> IO ()
+play secret = do guesses <- playGame secret 0
+                 putStrLn $ "You win! You took " ++ show guesses ++ " guesses!"
+                 -- Note: The $ operator is used to avoid using parentheses.
+
+
+playGame :: Int -> Int -> IO Int
+playGame secret guesses = do putStr "? "
+                             input <- getLine
+                             let guess = read input :: Int
+                             if guess == secret then
+                                do return (guesses + 1)
+                             else if guess < secret then
+                                do putStrLn "Too small!"
+                                   playGame secret (guesses + 1)
+                             else 
+                                do putStrLn "Too big!"
+                                   playGame secret (guesses + 1)
+
+
+Simple File I/O
+
+
+               * The basic operations of files are:
+               * readFile  :: FilePath -> IO String
+               * writeFile :: FilePath -> String -> IO ()
+               * System.IO must be imported first.
+               * The readFile function takes a file name as an argument (FilePath), does some IO, and returns the file's contents as a string (IO String).
+               * The writeFile takes a file name (FilePath), a string, and does some IO (writing that string to the file).
+               * The following example represents a simple way to read an input file, along with some simple file processing.
+
+
+-- readroster.hs
+--
+-- Read a file into a list.
+--
+-- Uses the readFile function from System.IO module.
+-- readFile :: FilePath -> IO String
+--
+-- Uses the lines function which inputs a String and parses it into a list of 
+-- tokens, with a default delimiter of \n.
+-- lines :: String -> [String]
+--
+-- The following would be a simple way to read a file containing one item per
+-- line, and then to assign the items to a list.
+
+
+import System.IO 
+
+
+main = do
+          roster <- readFile "roster" -- file roster must be in current directory
+          let students = lines roster
+          print students
+
+
+List Comprehensions
+
+
+               * We saw some list comprehensions in the first Haskell tutorial.
+               * We will add some more.
+
+                  * List comprehensions have a basis in set comprehensions.
+                  * Used for building more specific sets out of general sets
+                  * A set comprehension for a set S that contains the first ten even natural numbers:
+
+  
+
+
+
+                     * The part before the pipe (2 x) is called the output function, x is the variable, N is the input set and x <= 10 is the predicate. 
+                        * Set S will contain the doubles of all natural numbers that satisfy the predicate (x <= 10).
+                        * A Haskell list comprehension to express the set comprehension above would be 
+
+                [x * 2 | x <- [1..10]]
+
+where x is drawn from (<-) the list [1..10].
+                           * For every element in [1..10] (which we have bound to x), we apply the output function x * 2.
+                           * The result is the list [2,4,6,8,10,12,14,16,18,20]
+                           * The result of every list comprehension is a list.
+                           * We can assign the resulting list to a list variable.
+
+        s = [x * 2 | x <- [1..10]]
+
+
+                              * List comprehension predicates are boolean expressions that are added after commas.
+                              * The predicates act as filters on the list-to-varible bindings.
+                              * The following list comprehension will generate a list of characters (a String) from str, where only the upper case letters in str will be chosen.
+                              * The predicate here is c `elem` ['A' .. 'Z'], a boolean expression.
+
+lowerStr = [ c | c <- str, c `elem` ['A' .. 'Z']]
+
+
+I/O, List Comprehension Example: Starman
+
+
+                                 * Note in the example below the use of list comprehensions, the zip function, tuples, I/O and mutual recursion.
+
+
+-- starman.hs
+-- Hangman clone exercise
+
+
+-- Check the player's guess, i.e., whether their single char is 
+-- within the hidden word.
+check :: String -> String -> Char -> (Bool, String)
+check word display c
+        = (c `elem` word, [if x == c
+                           then c
+                           else y | (x, y) <- zip word display])
+
+
+
+
+
+
+-- Turn function
+-- Called each time that the player is prompted for a letter.
+-- Would look better using guards (|).
+turn :: String -> String -> Int -> IO ()
+turn word display nStars =
+        do if nStars == 0 then
+              putStrLn "You lose."
+           else if word == display then
+                   putStrLn "You win!"
+                else
+                   getGuess word display nStars -- game continues
+                   
+                   
+                   
+
+
+-- Get player's guess
+-- Grab a line of input, but only use 1st char.
+getGuess :: String -> String -> Int -> IO ()
+getGuess word display nStars =
+    do putStrLn (display ++ "  " ++ take nStars (repeat '*'))
+       putStr "  Enter your guess: "
+       q <- getLine
+       let (correct, display') = check word display (q !! 0)
+       let nStars' = if correct then
+                        nStars
+                     else
+                        nStars - 1
+       turn word display' nStars'
+
+
+-- Notice: turn and getGuess have same inputs and are mutually recursive.
+
+
+
+
+
+
+-- Top-level function
+-- Usage: starman "secretword" numberOfStars
+starman :: String -> Int -> IO ()
+starman word nStars = turn word ['-' | _ <- word] nStars
+-- ['-' | _ <- word] generates a String of dashes with same length
+-- as word. Can also be written
+-- ['-' | x <- word], but the preferred style is to use _, since x will not be used.
+
+
+
+
+Recursive Functions on Lists
+
+
+Computing with lists
+
+
+                                 * There are two approaches to working with lists:
+                                 * 1 - Write functions to do what you want, using recursive definitions that traverse the list structure.
+                                 * 2 - Write combinations of the standard list processing functions, e.g., head, tail, init, last, take, !!, etc.
+
+
+Recursion on lists
+
+
+                                 * A list is built from the empty list [] and the function cons::a→[a]→[a]. 
+                                 * In Haskell, the function cons is actually written as the operator (:), i,e., ":" is pronounced as "cons."
+                                 * Every list must be either
+                                 * [] or
+                                 * (x:xs) for some x (the head of the list) and xs (the tail)
+                                 * where (x:xs) is pronounced as "x cons xs".
+                                 * The recursive definition follows the structure of the data:
+                                 * Base case of the recursion is [].
+                                 * Recursion case is (x:xs).
+Some examples of recursion on lists
+
+
+                                 * Recursive definition of length
+                                 * (Also see the haskell-tutorial.hs.)
+                                 * The length of a list can be computed recursively as follows:
+
+
+                -- Won't work if not loaded from a file in ghci.
+length' :: [a] -> Int                -- optional type definition
+length' [] = 0                   -- the base case
+length' (x:xs) = 1 + length' xs  -- recursion case
+
+
+                                 * Recursive definition of filter
+                                 * filter is a higher-order function that, given a predicate (a function that gives a Boolean result) and a list, returns a list of the elements that satisfy the predicate.
+                                 * Similar to using a list comprehension
+
+
+filter :: (a->Bool) -> [a] -> [a]
+
+                                 * Filtering is useful for the "generate and test" programming paradigm.
+
+                filter (<5) [3,9,2,12,6,4] -- yields [3,2,4]
+
+                                 * The library definition for filter is shown below.
+
+        filter :: (a -> Bool) -> [a] -> [a]
+filter pred []    = []                        -- base case
+filter pred (x:xs)                        -- recursion case
+  | pred x         = x : filter pred xs
+  | otherwise      = filter pred xs
+
+
+Computations over lists
+
+
+                                    * Many computatations that would use for/while loops in an imperative language are naturally expressed as list computations in a functional language.
+                                    * There are some common cases:
+                                    * Perform a computation on each element of a list: map
+                                    * Iterate over a list, from left to right: foldl
+                                    * Iterate over a list, from right to left: foldr
+                                    * It’s good practice to use these three functions (and related functions) when applicable.
+
+
+Function composition
+
+
+                                    * We can express a large computation by chaining together a sequence of functions that perform smaller computations.
+                                    * Start with an argument of type a.
+                                    * Apply a function g::a−>b to it, getting an intermediate result of type b.
+                                    * Then apply a function f::b−>c to the intermediate result b, getting the final result of type c.
+                                    * The entire computation (first g, then f) is written as f∘g.
+                                    * This is mathematical notation; the functions are used in right to left order.
+                                    * Haskell uses . as the function composition operator.
+
+
+        (.) :: (b->c) -> (a->b) -> a -> c
+(f . g) x = f (g x)
+
+
+Performing an operation on every element of a list: map
+
+
+                                    * map applies a function to every element of a list.
+
+
+                map f [x0,x1,x2] -- > [f x0, f x1, f x2]
+
+
+                                    * Composition of maps
+                                    * map is one of the most commonly used tools in the functional toolkit.
+                                    * A common style is to define a set of simple computations using map, and to compose them.
+
+
+map f (map g xs) = map (f . g) xs
+
+                                    * We could write:
+
+
+                        -- multiply every element of [1..10] by 3 and then add 5 to the results
+map (+5) (map (*3) [1..10])
+
+
+                                    * But we could also write a composition of the two functions when mapping:
+
+
+                        map ((+5) . (*3)) [1..10]
+Folding a list (reduction)
+
+
+                                    * An iteration over a list to produce a singleton value is called a "fold".
+                                    * There are several variations: folding from the left, folding from the right, several variations having to do with "initialisation," and some more advanced variations.
+
+
+                                    * Left fold: foldl
+                                    * Think of it as an iteration across a list, going left to right.
+                                    * A typical application is foldl f z xs
+                                    * The z :: b argument is an initial value of type b.
+                                    * The xs :: [a] argument is a list of values which we combine systematically using the supplied function f.
+                                    * Think of the z :: b argument as an "accumulator".
+                                    * The function f takes the current value of the accumulator and a list element, and gives the new value of the accumulator.
+                                    * Examples of foldl with operator notation
+                                    * (+) denotes the + function for function f.
+
+foldl (+) z []          -- > z
+foldl (+) z [x0]        -- > z + x0
+foldl (+) z [x0,x1]     -- > (z + x0) + x1
+foldl (+) z [x0,x1,x2]  -- > ((z + x0) + x1) + x2
+
+
+                                       * Right fold: foldr
+                                       * Similar to foldl, but it works from right to left.
+                                       * Examples of foldr with operator notation
+
+
+                        foldr (+) z []          -- > z
+foldr (+) z [x0]        -- > x0 + z
+foldr (+) z [x0,x1]     -- > x0 + (x1 + z)
+foldr (+) z [x0,x1,x2]  -- > x0 + (x1 + (x2 + z))
+
+
+                                       * Some applications of folds
+
+
+                sum' xs = foldr (+) 0 xs
+product' xs = foldr (*) 1 xs
+
+
+foldr (div) 7 [34,56,12,4,23] -- same as: div 34 (div 56 (div 12 (div 4 (div 23 7))))
+foldl (div) 7 [34,56,12,4,23] -- same as: div (div (div (div (div 7 34) 56) 12) 4) 23
+
+
+Functional Maps and Folds versus Imperative Loops
+
+
+                                       * How to think about maps and folds when coming from an imperative loop mindset
+                                       * map : loop over a list element-by-element, append new element to new list
+                                       * foldl : loop over a list element-by-element, update an accumulator using current accumulator and current element
+                                       * foldr : loop over a reversed list element-by-element, update an accumulator using current accumulator and current element
+
+                                       * An example:
+
+
+-- maps_folds.hs
+
+        -- our list
+lst = [1 .. 10]
+
+
+-- map
+f x = x*(x+1)
+lst_ = map f lst
+
+
+-- foldl
+g = (/)
+accl = foldl g 1 lst -- 1/1/2/3/4/5/6/7/8/9/10
+-- accl = 2.7557319223985894e-7
+
+
+-- foldr
+accr = foldr g 1 lst -- 1/(2/(3/(4/(5/(6/(7/(8/(9/(10/1)))))))))
+-- accr = 0.24609375
+
+
+-- main
+main = do
+    print lst_
+    print accl
+    print accr

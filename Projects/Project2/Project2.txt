@@ -1,0 +1,29 @@
+﻿CS-498/598 - Functional Programming
+Project 2: Word length occurrences
+
+
+Deadline: Thursday, 6/28/2018, 11:59pm
+
+
+You will work in groups of 2-3. Your group members' names must be included in program source code. Dropbox only 1 submittal per group.
+
+
+Write a program wordLengths.hs to display the number of occurrences of word lengths in an input file.
+
+
+The input file is a word list, english.sorted, consisting of 121,692 words of varying lengths. Your program must open and read the english.sorted file.
+
+
+Program output is to the terminal only. Your program output must be similar to the sample output.
+
+
+Notes:
+
+
+* The program must be compileable with ghc or runnable with runghc.
+
+
+Extra credit (+10%):
+
+
+* Make your program output an additional column of word samples.

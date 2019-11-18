@@ -1,0 +1,131 @@
+﻿CS-498/598
+Summer 2018
+Assignment 3
+
+
+Deadline: Wednesday, 6/20/18, 11:59pm
+Name: Todd Qualiano
+
+
+Save this file as assignment3.txt. Insert your name and answers and dropbox it.
+
+
+(Recursive functions - 10 points)
+1. Write the definition of a recursive function intsFromTo that generates a list of
+   integers in a given range:
+
+
+       -- intsFromTo :: Int -> Int -> [Int]
+       -- intsFromTo m n = [ m, m + 1, ..., n ]
+
+
+   The function would work as follows:
+
+
+        intsFromTo 3 10                -- result: [3,4,5,6,7,8,9,10]
+
+
+    intsFromTo m n 
+        | m > n     = []
+        | otherwise = m : intsFromTo (m + 1) n
+
+
+
+(Recursive functions - 10 points)
+2. Write the definition of a recursive function removeOdd that, given a list of
+   integers, removes all odd numbers from the list:
+
+
+        -- removeOdd :: [Int] -> [Int]
+
+
+   The function would work as follows:
+
+
+removeOdd [1, 4, 5, 7, 10] -- result: [4,10]
+
+
+   removeOdd [] = []
+   removeOdd (n:ns) =
+     if even n then
+        n : removeOdd ns
+     else
+        removeOdd ns
+
+
+
+(Recursive functions - 10 points)
+3. Write the definition of a recursive function countTrue that returns the number of
+   occurrences of the value True in a Bool list:
+
+
+   The function would work as follows:
+
+
+countTrue [False, True, False, True] -- result: 2
+countTrue []                         -- result: 0
+
+   countTrue [] = 0
+   countTrue (x:xs) = 
+      if x == True then
+         1 + countTrue xs
+      else
+         countTrue xs
+    
+
+
+
+
+(List comprehensions - 10 points)
+4. Write a removeOdd' function definition (non-recursive) using a list comprehension.
+   The function must do the same thing as removeOdd from problem 2.
+
+
+    removeOdd' ns = [n | n <- ns, even n]
+
+
+
+(Filters - 5 points)
+5. Say that you want to use the filter function to remove all empty Strings in a list
+   of Strings. The filter would be used as follows:
+
+
+        filter nonEmptyStr ["1", "2", "", "4", "", "6"]
+        -- result: ["1","2","4","6"]
+
+
+   Write a working definition for the nonEmptyStr function below:
+
+
+        -- nonEmptyStr :: String -> Bool
+       
+       nonEmptyStr :: String -> Bool
+       nonEmptyStr s = 
+          if s == "" then
+             False
+          else
+             True
+
+
+
+
+
+(Maps - 5 points)
+6. Say that you want to use the map function to replace all instances of the empty
+   String in a list with "-1". The map would be used as follows:
+
+
+        map replaceEmptyStr ["1", "2", "", "4", "", "6"]
+        -- result: ["1","2","-1","4","-1","6"]
+
+
+   Write a working definition for the replaceEmptyStr function below:
+
+
+        -- replaceEmptyStr :: String -> String
+       replaceEmptyStr :: String -> String
+       replaceEmptyStr s = 
+          if s == "" then
+             "-1"
+          else
+             s

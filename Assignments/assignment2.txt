@@ -1,0 +1,155 @@
+﻿CS-498/598
+Summer 2018
+Assignment 2
+
+
+Deadline: Wednesday, 6/6/18, 11:59pm
+Name: Todd Qualiano
+
+
+Save this file as assignment2.txt. Insert your name and answers and dropbox it. 
+Also dropbox triangles.hs from problem 3) below.
+
+
+(Lists - 13 points)
+1. In ghci, try the following expressions and write what the resulting values are.
+   What is wrong with the ones that give errors?
+
+
+1:[2,3,4]
+
+	[1,2,3,4]
+
+
+1:2:3:4:[]
+
+	[1,2,3,4]
+
+
+[1,2,3]:[4..7]
+
+	ERROR: The cons (:) operator adds elements to lists, but not lists to lists.
+
+
+[1,2,3] ++ [4..7]
+
+	[1,2,3,4,5,6,7]
+
+
+1:['a','b']
+
+	ERROR: We are trying to add an integer to a list of chars.
+
+
+"abc"++"cd"
+
+	"abccd"
+
+
+"a":"bCc"
+
+	ERROR: Strings are understood by Haskell as lists.  Thus, we are trying to 
+		add two lists using the cons operater, which is illegal
+
+		
+"a" ++ "bCc"
+
+	"abCc"
+
+
+'a':'b'
+
+	ERROR: We are trying to add a char to another char. Since 'b' is a char and
+		not a list, we cannot use the cons operator to combine them into a list.
+
+
+'a':"b"
+
+	"ab"
+
+
+[1,4,7] ++ 4:[5:[]]
+
+	ERROR: We are trying to add a Num, 4, to a list of lists of numbers, [[5]]. If we fix
+		this issue, we may run into the issue of trying to combine a list of Nums with a 
+		list of lists of Nums. This would result in an error since we are trying to combine
+		two lists of different types.
+
+
+[True,True:[]]  
+
+	ERROR: We have a list with two different types. One being a Bool and the other
+		being a list of Bools
+
+
+True:[True,False]
+
+	[True, True, False]
+
+
+
+
+(15 points)
+2. A mathematician named Ulam proposed generating a sequence of numbers from any
+   positive integer n (n > 0) as follows:
+
+
+          • If n is 1, stop.
+          • If n is even, the next number is n/2.
+          • If n is odd, the next number is 3*n + 1.
+          • Continue with this process until reaching 1.
+
+
+   Here are some sequences for the starting integers 2-7:
+
+
+          2 ->  1
+          3 -> 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
+          4 ->  2 ->  1
+          5 -> 16 ->  8 ->  4 ->  2 ->  1
+          6 ->  3 -> <repeat Ulam sequence for 3>
+          7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13
+            -> 40 -> 20 -> 10 -> 5 -> <repeat Ulam sequence for 5>
+
+
+   Write the definition of a function called 'ulam' which takes an integer argument
+   n and returns the Ulam sequence for n as a String:
+
+
+   -- ulam :: Int -> String
+
+
+   Haskell has boolean functions called even and odd that you can use.
+
+
+   
+	ulam :: Integer -> String
+	ulam 1 = "1"
+	ulam x
+		| odd x = show x ++ " -> " ++ ulam ((3*x) + 1)
+		| otherwise = show x ++ " -> " ++ ulam ((x `div` 2))
+
+
+
+
+(15 points)
+3. Write a program, triangles.hs, that prompts for and inputs the 3 edges of a
+   triangle and outputs whether the edges form a valid triangle or not. The triangle
+   is valid if the sum of any two edges is greater than the third edge. For example,
+   if the edges have lengths 1, 2 and 1, that is not a valid triangle. If the edges
+   are 2, 2 and 1, that is a valid triangle.
+
+
+   In triangles.hs, use a boolean function 'validTriangle' that takes 3 arguments for
+   the 3 triangle edges and returns True if the edges form a valid triangle, else
+   False if they do not form a valid triangle:
+
+
+        -- validTriangle :: Double -> Double -> Double -> Boolean
+
+
+   Your program must be compileable using ghc or runnable using runghc.
+   
+   
+   
+   See file triangles.hs
