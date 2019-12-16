@@ -1,0 +1,1 @@
+The book folder refers to examples from the Haskell Programming: From First Principles textbook
